@@ -19,6 +19,15 @@ Here’s what it looks like:
 
 ---
 
+## 🔐 Privacy & Offline Mode
+
+Once installed, this tool runs entirely offline — no internet connection required for transcription.  
+Your voice stays on your machine, and nothing is sent to any external server.  
+
+Perfect for private notes, journaling, or working on-the-go.
+
+---
+
 ## 🛠️ Setup (macOS only)
 
 1. **Install dependencies:**
