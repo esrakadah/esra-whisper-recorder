@@ -5,9 +5,13 @@
 # No loops, no folders, just the transcript. 
 # Run this from within your whisper-env virtualenv.
 
-# Timestamp
+# Create temp folder
+TMP_DIR="./tmp"
+mkdir -p "$TMP_DIR"
+
+# Timestamped output
 timestamp=$(date +"%Y%m%d_%H%M%S")
-WAV_FILE="recording_$timestamp.wav"
+WAV_FILE="$TMP_DIR/recording_$timestamp.wav"
 
 echo ""
 echo "🎤 Press ENTER to start recording..."
@@ -22,12 +26,11 @@ echo "🛑 Recording stopped. Transcribing..."
 
 # Transcribe using whisper CLI (requires whisper installed in virtualenv)
 echo "⏳ Transcribing (this may take ~5s)..."
-TRANSCRIPT=$(whisper "$WAV_FILE" --model small --language en --fp16 False --output_format txt 2>/dev/null)
+TRANSCRIPT=$(~/whisper-env/bin/whisper "$WAV_FILE" --model small --language en --fp16 False --output_dir "$TMP_DIR")
 
-# Get the actual text from output file (removes timestamped line)
-TRANSCRIPT_TEXT=$(tail -n +1 "${WAV_FILE%.wav}.txt" | grep -vE '^\[')
+# Use direct output for clipboard & display
+TRANSCRIPT_TEXT=$(tail -n +1 "${TMP_DIR}/$(basename "$WAV_FILE" .wav).txt" | grep -vE '^\[')
 
-# Copy & echo
 echo ""
 echo "📋 Transcript:"
 echo "$TRANSCRIPT_TEXT"

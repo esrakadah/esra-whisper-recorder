@@ -11,6 +11,12 @@ Run → Speak → Get your text → Done.
 - Shows the text in your terminal output.
 - Requires **no GUI**, no manual file cleanup, no post-processing.
 
+## Demo
+
+Here’s what it looks like:
+
+![CLI Demo](./whisper-demo.png)
+
 ---
 
 ## 🛠️ Setup (macOS only)
@@ -50,7 +56,9 @@ source ~/whisper-env/bin/activate
 ✅ Copied to clipboard
 ```
 
-All temporary `.wav` and `.txt` files will be created in the current directory.
+All temporary files (`.wav`, `.txt`, `.json`, etc.) are stored in a `tmp/` folder.
+🧹 You can delete the `tmp/` folder anytime. It’s just scratch space.
+
 
 ---
 
@@ -58,6 +66,13 @@ All temporary `.wav` and `.txt` files will be created in the current directory.
 
 This tool was made for personal use — quick idea capturing and voice transcription with no loops, no UI, and minimal dependencies.  
 If you'd like to add hotkey triggers, auto-cleanup, or loops, feel free to fork and iterate.
+
+### Temporary Files
+
+All output files (audio and transcription artifacts) are stored inside a `tmp/` folder.
+You can delete this folder at any time — it won’t affect the tool.
+
+To ignore it from Git versioning, it's already listed in `.gitignore`.
 
 ---
 

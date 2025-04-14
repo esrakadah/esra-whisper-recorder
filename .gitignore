@@ -1,8 +1,2 @@
-transcripts/
-recordings/
-*.wav
-*.srt
-*.vtt
-*.tsv
-*.json
 .DS_Store
+tmp/
