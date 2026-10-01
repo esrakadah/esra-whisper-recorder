@@ -1,39 +1,87 @@
 #!/bin/bash
+# 🎙️ Esra Whisper Recorder: record, transcribe offline with Whisper, copy the text to the clipboard (macOS).
+#
+# Usage: ./record_and_transcribe.sh [--keep] [audio-file]
+#   audio-file  transcribe this file instead of recording
+#   --keep      keep the recording and transcript (the folder is printed)
+#
+# Settings (environment variables):
+#   WHISPER_BIN    path to the whisper CLI (default: whisper on PATH, else ~/whisper-env/bin/whisper)
+#   WHISPER_MODEL  tiny, base, small, medium, large (default: small)
+#   WHISPER_LANG   language code such as en, de, tr (default: Whisper detects the language)
 
-# 🎙️ Esra Whisper Recorder (Minimal version)
-# One-shot voice-to-text: record → transcribe → copy → done
-# No loops, no folders, just the transcript. 
-# Run this from within your whisper-env virtualenv.
+set -euo pipefail
 
-# Create temp folder
-TMP_DIR="./tmp"
-mkdir -p "$TMP_DIR"
+WHISPER_BIN="${WHISPER_BIN:-$(command -v whisper || echo "$HOME/whisper-env/bin/whisper")}"
+WHISPER_MODEL="${WHISPER_MODEL:-small}"
+WHISPER_LANG="${WHISPER_LANG:-}"
+SAMPLE_RATE_HZ=16000
 
-# Timestamped output
-timestamp=$(date +"%Y%m%d_%H%M%S")
-WAV_FILE="$TMP_DIR/recording_$timestamp.wav"
+fail() {
+  echo "❌ $1" >&2
+  exit 1
+}
 
-echo ""
-echo "🎤 Press ENTER to start recording..."
-read -r
-echo "🔴 Recording... Press ENTER to stop."
-rec -q -c 1 -b 16 "$WAV_FILE" &
-rec_pid=$!
-read -r
-kill "$rec_pid" >/dev/null 2>&1
-wait "$rec_pid" 2>/dev/null
-echo "🛑 Recording stopped. Transcribing..."
+keep_files=false
+input_file=""
+for argument in "$@"; do
+  case "$argument" in
+    --keep) keep_files=true ;;
+    -h | --help)
+      sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    -*) fail "Unknown option: $argument (see --help)" ;;
+    *) input_file="$argument" ;;
+  esac
+done
 
-# Transcribe using whisper CLI (requires whisper installed in virtualenv)
-echo "⏳ Transcribing (this may take ~5s)..."
-TRANSCRIPT=$(~/whisper-env/bin/whisper "$WAV_FILE" --model small --language en --fp16 False --output_dir "$TMP_DIR")
+command -v pbcopy >/dev/null || fail "pbcopy not found. This script is for macOS."
+[[ -x "$WHISPER_BIN" ]] || fail "Whisper not found at $WHISPER_BIN. Set WHISPER_BIN or follow the README setup."
+if [[ -z "$input_file" ]]; then
+  command -v rec >/dev/null || fail "rec not found. Install SoX: brew install sox"
+fi
 
-# Use direct output for clipboard & display
-TRANSCRIPT_TEXT=$(tail -n +1 "${TMP_DIR}/$(basename "$WAV_FILE" .wav).txt" | grep -vE '^\[')
+work_dir="$(mktemp -d)"
+if $keep_files; then
+  echo "📁 Files are kept in $work_dir"
+else
+  trap 'rm -rf "$work_dir"' EXIT
+fi
+
+if [[ -n "$input_file" ]]; then
+  [[ -f "$input_file" ]] || fail "No such file: $input_file"
+  audio_file="$input_file"
+else
+  audio_file="$work_dir/recording.wav"
+  echo ""
+  echo "🎤 Press ENTER to start recording..."
+  read -r
+  echo "🔴 Recording... Press ENTER to stop."
+  rec -q -V1 -r "$SAMPLE_RATE_HZ" -c 1 -b 16 "$audio_file" &
+  recorder_pid=$!
+  read -r
+  kill "$recorder_pid" 2>/dev/null || true
+  wait "$recorder_pid" 2>/dev/null || true
+  echo "🛑 Recording stopped."
+fi
+
+echo "⏳ Transcribing with the '$WHISPER_MODEL' model..."
+language_option=()
+if [[ -n "$WHISPER_LANG" ]]; then
+  language_option=(--language "$WHISPER_LANG")
+fi
+# --fp16 False: the reference Whisper runs on the CPU on Macs, where fp16 is unsupported and only warns.
+"$WHISPER_BIN" "$audio_file" --model "$WHISPER_MODEL" ${language_option[@]+"${language_option[@]}"} \
+  --fp16 False --output_format txt --output_dir "$work_dir" >/dev/null
+
+audio_name="$(basename "$audio_file")"
+transcript_file="$work_dir/${audio_name%.*}.txt"
+[[ -s "$transcript_file" ]] || fail "Whisper produced no text. Your clipboard was not changed."
+transcript="$(<"$transcript_file")"
 
 echo ""
 echo "📋 Transcript:"
-echo "$TRANSCRIPT_TEXT"
-echo "$TRANSCRIPT_TEXT" | pbcopy
-echo "✅ Transcription done. Copied to clipboard."
-
+echo "$transcript"
+printf '%s' "$transcript" | pbcopy
+echo "✅ Copied to clipboard."

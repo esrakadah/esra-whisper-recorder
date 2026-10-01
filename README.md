@@ -1,93 +1,103 @@
-# 🎙️ Esra Whisper Recorder (Minimal Version)
+# 🎙️ Esra Whisper Recorder
 
-A lightweight, no-frills CLI voice recorder and transcriber using OpenAI Whisper + SoX for macOS.  
-Run → Speak → Get your text → Done.
+A one-file voice-to-text tool for the macOS command line: record with SoX, transcribe offline with
+[OpenAI Whisper](https://github.com/openai/whisper), get the text in your terminal and on your clipboard.
+
+Run → Speak → Press ENTER → Paste.
 
 ## ✅ What it does
 
-- Records your voice using SoX.
-- Transcribes using [Whisper](https://github.com/openai/whisper) (`small` model).
-- Copies the result to your clipboard (`pbcopy`).
-- Shows the text in your terminal output.
-- Requires **no GUI**, no manual file cleanup, no post-processing.
+- Records your voice with SoX (16 kHz mono, what Whisper expects).
+- Transcribes it with Whisper (`small` model by default, language detected automatically).
+- Prints the transcript and copies it to the clipboard with `pbcopy`.
+- Cleans up after itself: recordings live in a temporary folder that is deleted when the script exits.
+- If anything fails, it says so and **leaves your clipboard untouched**.
 
-## Demo
+```text
+🎤 Press ENTER to start recording...
+🔴 Recording... Press ENTER to stop.
+🛑 Recording stopped.
+⏳ Transcribing with the 'small' model...
 
-Here’s what it looks like:
+📋 Transcript:
+And so my fellow Americans, ask not what your country can do for you, ask what you can do for your country.
+✅ Copied to clipboard.
+```
 
-![CLI Demo](./whisper-demo.png)
+![CLI demo](./whisper-demo.png)
+
+*Screenshot of the first version. Today the timestamp line is gone and the wait depends on the model (see below).*
 
 ---
 
-## 🔐 Privacy & Offline Mode
+## 🔐 Privacy & offline mode
 
-Once installed, this tool runs entirely offline — no internet connection required for transcription.  
-Your voice stays on your machine, and nothing is sent to any external server.  
+After setup, transcription runs entirely on your Mac. Your voice is never sent anywhere.
 
-Perfect for private notes, journaling, or working on-the-go.
+The **first run of each model downloads it** (about 480 MB for `small`) into `~/.cache/whisper/`. From then
+on no network connection is needed.
 
 ---
 
-## 🛠️ Setup (macOS only)
-
-1. **Install dependencies:**
+## 🛠️ Setup (macOS)
 
 ```bash
 brew install sox ffmpeg
+git clone https://github.com/esrakadah/esra-whisper-recorder.git
+cd esra-whisper-recorder
+
 python3.11 -m venv ~/whisper-env
-source ~/whisper-env/bin/activate
-pip install --upgrade pip setuptools-rust wheel
-pip install git+https://github.com/openai/whisper.git
+~/whisper-env/bin/pip install --upgrade pip
+~/whisper-env/bin/pip install openai-whisper==20250625
 ```
 
-2. **Make your script executable:**
+Tested with Python 3.11 and `openai-whisper` 20250625. Older releases such as 20240930 no longer build with
+current setuptools.
+
+Then run it:
 
 ```bash
-chmod +x record_and_transcribe.sh
-```
-
-3. **Run the script:**
-
-```bash
-source ~/whisper-env/bin/activate
 ./record_and_transcribe.sh
 ```
 
+No `source activate` is needed: the script finds `whisper` on your `PATH`, or falls back to
+`~/whisper-env/bin/whisper`.
+
 ---
 
-## ⚙️ How it works
+## ⚙️ Options
 
 ```bash
-🎤 Press ENTER to start recording
-🔴 Recording... Press ENTER to stop
-🛑 Recording stopped. Transcribing...
-📋 Transcript: [shown in terminal]
-✅ Copied to clipboard
+./record_and_transcribe.sh                 # record, transcribe, copy
+./record_and_transcribe.sh memo.wav        # transcribe an existing file instead of recording
+./record_and_transcribe.sh --keep          # keep the recording and transcript; the folder is printed
+WHISPER_LANG=de ./record_and_transcribe.sh # force a language (en, de, tr, ...)
 ```
 
-All temporary files (`.wav`, `.txt`, `.json`, etc.) are stored in a `tmp/` folder.
-🧹 You can delete the `tmp/` folder anytime. It’s just scratch space.
+| Variable | Default | What it does |
+|---|---|---|
+| `WHISPER_MODEL` | `small` | `tiny` and `base` are faster, `medium` and `large` more accurate |
+| `WHISPER_LANG` | detected | Set it when Whisper guesses the wrong language for short clips |
+| `WHISPER_BIN` | `whisper` on `PATH`, else `~/whisper-env/bin/whisper` | Use another Whisper install |
 
+**Speed:** this is the reference Whisper, which runs on the CPU on Macs. An 11-second clip takes about
+20 seconds with `small` on an Apple Silicon Mac. Use `WHISPER_MODEL=base` or `tiny` when speed matters more
+than accuracy.
 
 ---
 
 ## 🔍 Why it's minimal
 
-This tool was made for personal use — quick idea capturing and voice transcription with no loops, no UI, and minimal dependencies.  
-If you'd like to add hotkey triggers, auto-cleanup, or loops, feel free to fork and iterate.
+Made for personal use: quick idea capture with no loops, no UI and two dependencies (SoX and Whisper).
 
-### Temporary Files
-
-All output files (audio and transcription artifacts) are stored inside a `tmp/` folder.
-You can delete this folder at any time — it won’t affect the tool.
-
-To ignore it from Git versioning, it's already listed in `.gitignore`.
+In 2026 there are faster options on Apple Silicon: [whisper.cpp](https://github.com/ggml-org/whisper.cpp)
+(Metal, no Python), [mlx-whisper](https://pypi.org/project/mlx-whisper/), or macOS's built-in dictation. This
+repository stays the minimal, readable reference.
 
 ---
 
 ## ✨ Community
 
-This project was released freely as a small helper tool.  
-Raise a PR if you have ideas — otherwise, use it as-is and enjoy.
+Small fixes are welcome as PRs; for anything bigger, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 Built with love by [@esrakadah](https://github.com/esrakadah) 💛
