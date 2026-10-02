@@ -26,7 +26,7 @@ And so my fellow Americans, ask not what your country can do for you, ask what y
 
 ![CLI demo](./whisper-demo.png)
 
-*Screenshot of the first version. Today the timestamp line is gone and the wait depends on the model (see below).*
+*A real run on a sample clip, passed as a file. A recording looks the same after the two ENTER prompts.*
 
 ---
 
