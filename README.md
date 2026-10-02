@@ -88,7 +88,8 @@ than accuracy.
 
 ## 🔍 Why it's minimal
 
-Made for personal use: quick idea capture with no loops, no UI and two dependencies (SoX and Whisper).
+Made for personal use: quick idea capture with no loops, no UI and two dependencies: SoX, and Whisper (which
+needs ffmpeg).
 
 In 2026 there are faster options on Apple Silicon: [whisper.cpp](https://github.com/ggml-org/whisper.cpp)
 (Metal, no Python), [mlx-whisper](https://pypi.org/project/mlx-whisper/), or macOS's built-in dictation. This
