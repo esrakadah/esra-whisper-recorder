@@ -63,11 +63,11 @@ else
   audio_file="$work_dir/recording.wav"
   echo ""
   echo "🎤 Press ENTER to start recording..."
-  read -r
+  read -r || fail "No input (stdin closed). Run the script in a terminal, or pass an audio file."
   echo "🔴 Recording... Press ENTER to stop."
   rec -q -V1 -r "$SAMPLE_RATE_HZ" -c 1 -b 16 "$audio_file" &
   recorder_pid=$!
-  read -r
+  read -r || fail "No input (stdin closed). The recording was discarded."
   kill "$recorder_pid" 2>/dev/null || true
   wait "$recorder_pid" 2>/dev/null || true
   recorder_pid=""
@@ -84,9 +84,10 @@ fi
   --fp16 False --output_format txt --output_dir "$work_dir" >/dev/null ||
   fail "Whisper failed (see the error above). Your clipboard was not changed."
 
-audio_name="$(basename "$audio_file")"
-transcript_file="$work_dir/${audio_name%.*}.txt"
-[[ -s "$transcript_file" ]] || fail "Whisper produced no text. Your clipboard was not changed."
+# Whisper names the output after the input; take the one .txt it wrote rather than rebuilding the name, which
+# differs for names such as ".memo".
+transcript_file="$(find "$work_dir" -maxdepth 1 -name '*.txt' -print -quit)"
+[[ -n "$transcript_file" && -s "$transcript_file" ]] || fail "Whisper produced no text. Your clipboard was not changed."
 transcript="$(<"$transcript_file")"
 [[ -n "${transcript//[[:space:]]/}" ]] || fail "Whisper produced no text. Your clipboard was not changed."
 

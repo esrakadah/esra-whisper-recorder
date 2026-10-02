@@ -3,7 +3,7 @@
 A one-file voice-to-text tool for the macOS command line: record with SoX, transcribe offline with
 [OpenAI Whisper](https://github.com/openai/whisper), get the text in your terminal and on your clipboard.
 
-Run → Speak → Press ENTER → Paste.
+Run, press ENTER, speak, press ENTER, paste.
 
 ## ✅ What it does
 
@@ -42,7 +42,7 @@ on no network connection is needed.
 ## 🛠️ Setup (macOS)
 
 ```bash
-brew install sox ffmpeg
+brew install sox ffmpeg python@3.11
 git clone https://github.com/esrakadah/esra-whisper-recorder.git
 cd esra-whisper-recorder
 
